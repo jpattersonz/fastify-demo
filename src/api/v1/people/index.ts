@@ -1,12 +1,27 @@
-import { createPersonSchema } from './dto';
+import { CreatePersonDto, createPersonSchema } from './dto';
+import { FastifyInstance } from 'fastify'
 
-export async function peopleRoutes(fastify, _) {
-  const people = [];
+type Person = { id: string } & CreatePersonDto;
+
+export async function peopleRoutes(fastify: FastifyInstance, _) {
+  const people: Person[] = [{
+    id: 'one',
+    firstName: 'super',
+    lastName: 'man',
+    email: 'super.man@fake.org',
+  }];
+
   fastify.get('/', async function (_req, _rep) {
     return people;
   });
 
-  fastify.get(
+  type GetById = {
+    id: string
+  };
+
+  fastify.get<{
+    Params: GetById,
+  }>(
     '/:id',
     {
       schema: {
@@ -16,11 +31,13 @@ export async function peopleRoutes(fastify, _) {
       },
     },
     async function (request, _) {
-      return people.find((p) => p.id == request.params.param) || {};
+      return people.find((p) => p.id == request.params.id) || {};
     }
   );
 
-  fastify.post(
+  fastify.post<{
+    Body: CreatePersonDto
+  }>(
     '/',
     {
       schema: {
@@ -28,8 +45,12 @@ export async function peopleRoutes(fastify, _) {
       },
     },
     async function ({ body }, _) {
-      people.push(body);
-      return body;
+      const person = {
+        id: 'random',
+        ...body
+      };
+      people.push(person);
+      return person;
     }
   );
 }
